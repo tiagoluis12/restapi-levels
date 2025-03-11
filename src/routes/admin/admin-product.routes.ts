@@ -24,7 +24,7 @@ router.get("/:productId", async (req, res) => {
 
 router.patch("/:productId", async (req, res) => {
   const productService = await createProductService();
-  const { name, slug, description, price, categoryIds } = req.body;
+  const { name, slug, description, price, categoryIds } = req.body; 
   const product = await productService.updateProduct({
     id: +req.params.productId,
     name,
