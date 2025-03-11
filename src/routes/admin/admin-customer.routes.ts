@@ -36,7 +36,7 @@ const customer = await customerService.updateCustomer({
 res.json(customer);
 });
 
-router.post("/:customerId/delete", async (req, res) => {
+router.delete("/:customerId", async (req, res) => {
 const customerService = await createCustomerService();
 const { customerId } = req.params;
 await customerService.deleteCustomer(+customerId);
