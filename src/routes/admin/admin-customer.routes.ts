@@ -23,7 +23,7 @@ res.send(customer ? customer : { message: "Customer not found" });
    //res.json(customer);
 });
 
-router.post("/:customerId", async (req, res) => {
+router.patch("/:customerId", async (req, res) => {
 const customerService = await createCustomerService();
 const { customerId } = req.params;
 const { phone, address, password } = req.body;
