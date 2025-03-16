@@ -1,4 +1,4 @@
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { createDatabaseConnection } from "./database";
 import customerRoutes from "./routes/customer.routes";
 import categoryRoutes from "./routes/category.routes";
@@ -10,9 +10,11 @@ import adminCustomerRoutes from "./routes/admin/admin-customer.routes";
 import adminCategoryRoutes from "./routes/admin/admin-category.routes";
 import loginRoutes from "./routes/session-auth.routes";
 import jwtAuthRoutes from "./routes/jwt-auth.routes";
-import { createCustomerService } from "./services/customer.service";
+import { createCustomerService, UserAlreadyExistsError } from "./services/customer.service";
 // import session from "express-session";
 import jwt from "jsonwebtoken";
+import { Resource } from "./http/resource";
+import { ValidationError } from "./errors";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -94,6 +96,55 @@ app.use("/admin/categories", adminCategoryRoutes);
 app.get("/", async (req, res) => {
   await createDatabaseConnection();
   res.send("Hello World!");
+});
+
+app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
+  if (!(error instanceof Error)) {
+    return next(error);
+  }
+
+  console.error(error);
+
+  if (error instanceof SyntaxError) {
+    return res.status(400).send({
+      title: "Bad Request",
+      status: 400,
+      detail: error.message,
+    });
+  }
+
+  if (error instanceof UserAlreadyExistsError) {
+    return res.status(409).send({
+      title: "Conflict",
+      status: 409,
+      detail: error.message,
+    });
+  }
+
+  if (error instanceof ValidationError) {
+    return res.status(422).send({
+      title: "Unprocessable Entity",
+      status: 422,
+      detail: {
+        errors: error.error.map((e) => ({
+          field: e.property,
+          constraints: e.constraints,
+        })),
+      },
+    });
+  }
+  res.status(500).send({
+    title: "Internal Server Error",
+    status: 500,
+    detail: "An unexpected error occurred"
+  });
+});
+
+app.use((result: Resource, req: Request, res: Response, next: NextFunction) => {
+  if (result instanceof Resource) {
+    return res.json(result.toJson());
+  }
+  next(result);
 });
 
 app.listen(PORT, async () => {
